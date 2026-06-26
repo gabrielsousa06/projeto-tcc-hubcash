@@ -3,7 +3,12 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
-// substitui <div>Dashboard</div> por:
+import { Profile } from './pages/Profile';
+
+// dentro das rotas:
+
+
+
 
 
 
@@ -25,7 +30,7 @@ function App() {
            <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/login" />} />
-         
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
