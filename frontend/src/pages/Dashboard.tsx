@@ -42,6 +42,8 @@ export function Dashboard() {
   const [form, setForm] = useState<TransactionForm>({
     title: '', amount: '', type: 'INCOME', category: '', date: '',
   });
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const months = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -54,6 +56,20 @@ export function Dashboard() {
   };
 
   useEffect(() => { fetchData(); }, [month, year]);
+
+  // Fecha o modal com Esc e trava o scroll do fundo enquanto ele está aberto
+  useEffect(() => {
+    if (!showModal) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowModal(false);
+    }
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [showModal]);
 
   async function fetchData() {
     setLoading(true);
@@ -74,6 +90,7 @@ export function Dashboard() {
   function openCreate() {
     setEditingTransaction(null);
     setForm({ title: '', amount: '', type: 'INCOME', category: '', date: '' });
+    setErrors({});
     setShowModal(true);
   }
 
@@ -86,10 +103,30 @@ export function Dashboard() {
       category: t.category,
       date: t.date.split('T')[0],
     });
+    setErrors({});
     setShowModal(true);
   }
 
+  function handleAmountChange(raw: string) {
+    // aceita só dígitos e vírgula/ponto, evita letras/símbolos por engano
+    const clean = raw.replace(/[^\d,.]/g, '').replace(',', '.');
+    setForm(f => ({ ...f, amount: clean }));
+    setErrors(er => ({ ...er, amount: '' }));
+  }
+
+  function validate(): boolean {
+    const errs: Record<string, string> = {};
+    if (!form.title.trim()) errs.title = 'Informe um título';
+    if (!form.amount || parseFloat(form.amount) <= 0) errs.amount = 'Informe um valor válido';
+    if (!form.category) errs.category = 'Selecione uma categoria';
+    if (!form.date) errs.date = 'Selecione uma data';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   async function handleSave() {
+    if (!validate()) return;
+    setSaving(true);
     try {
       const data = { ...form, amount: parseFloat(form.amount) };
       if (editingTransaction) {
@@ -101,6 +138,9 @@ export function Dashboard() {
       fetchData();
     } catch (err) {
       console.error(err);
+      setErrors({ submit: 'Erro ao salvar. Tente novamente.' });
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -290,6 +330,24 @@ export function Dashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)', fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          cursor: pointer;
+          opacity: 0.6;
+        }
+        input:focus, select:focus {
+          border-color: #0F4CFF !important;
+          box-shadow: 0 0 0 3px rgba(15,76,255,0.1);
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{
@@ -418,69 +476,175 @@ export function Dashboard() {
 
       {/* Modal */}
       {showModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '20px',
-        }}>
-          <div style={{
-            background: '#FFFFFF', borderRadius: '24px', padding: '40px',
-            width: '100%', maxWidth: '480px',
-            boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
-          }}>
-            <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
-              {editingTransaction ? 'Editar transação' : 'Nova transação'}
-            </h2>
+        <div
+          onClick={() => setShowModal(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: '20px', backdropFilter: 'blur(2px)',
+            animation: 'fadeIn 0.15s ease-out',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#FFFFFF', borderRadius: '24px', padding: '32px',
+              width: '100%', maxWidth: '460px',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.2)',
+              animation: 'slideUp 0.2s ease-out',
+              maxHeight: '90vh', overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
+                {editingTransaction ? 'Editar transação' : 'Nova transação'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  background: '#F1F5F9', border: 'none', borderRadius: '8px',
+                  width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px',
+                  color: '#64748B', lineHeight: 1,
+                }}
+              >×</button>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Tipo */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 {(['INCOME', 'EXPENSE'] as const).map(type => (
-                  <button key={type} onClick={() => setForm(f => ({ ...f, type, category: '' }))} style={{
-                    padding: '12px', borderRadius: '10px', border: '2px solid',
-                    borderColor: form.type === type ? (type === 'INCOME' ? '#10B981' : '#EF4444') : '#E5E7EB',
-                    background: form.type === type ? (type === 'INCOME' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)') : 'white',
-                    color: form.type === type ? (type === 'INCOME' ? '#10B981' : '#EF4444') : '#64748B',
-                    cursor: 'pointer', fontWeight: 600, fontSize: '14px',
-                  }}>
+                  <button
+                    key={type}
+                    onClick={() => setForm(f => ({ ...f, type, category: '' }))}
+                    style={{
+                      padding: '12px', borderRadius: '10px', border: '2px solid',
+                      borderColor: form.type === type ? (type === 'INCOME' ? '#10B981' : '#EF4444') : '#E5E7EB',
+                      background: form.type === type ? (type === 'INCOME' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)') : 'white',
+                      color: form.type === type ? (type === 'INCOME' ? '#10B981' : '#EF4444') : '#64748B',
+                      cursor: 'pointer', fontWeight: 600, fontSize: '14px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
                     {type === 'INCOME' ? '↑ Entrada' : '↓ Saída'}
                   </button>
                 ))}
               </div>
 
+              {/* Título */}
               <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>Título</label>
-                <input style={inputStyle} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Salário" />
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                  Título
+                </label>
+                <input
+                  autoFocus
+                  style={{ ...inputStyle, borderColor: errors.title ? '#EF4444' : '#E5E7EB' }}
+                  value={form.title}
+                  onChange={e => { setForm(f => ({ ...f, title: e.target.value })); setErrors(er => ({ ...er, title: '' })); }}
+                  placeholder="Ex: Salário"
+                />
+                {errors.title && <span style={{ color: '#EF4444', fontSize: '12px' }}>{errors.title}</span>}
               </div>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>Valor (R$)</label>
-                <input style={inputStyle} type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0,00" />
+              {/* Valor + Data lado a lado */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    Valor
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{
+                      position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                      color: '#94A3B8', fontSize: '14px', pointerEvents: 'none',
+                    }}>R$</span>
+                    <input
+                      style={{ ...inputStyle, paddingLeft: '38px', borderColor: errors.amount ? '#EF4444' : '#E5E7EB' }}
+                      inputMode="decimal"
+                      value={form.amount}
+                      onChange={e => handleAmountChange(e.target.value)}
+                      placeholder="0,00"
+                    />
+                  </div>
+                  {errors.amount && <span style={{ color: '#EF4444', fontSize: '12px' }}>{errors.amount}</span>}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    Data
+                  </label>
+                  <div
+                    onClick={(e) => {
+                      const input = e.currentTarget.querySelector('input');
+                      // showPicker existe nos navegadores modernos (Chrome, Edge)
+                      // @ts-ignore
+                      input?.showPicker?.();
+                    }}
+                    style={{
+                      ...inputStyle,
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      cursor: 'pointer', borderColor: errors.date ? '#EF4444' : '#E5E7EB',
+                    }}
+                  >
+                    <span style={{ color: '#94A3B8' }}>📅</span>
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={e => { setForm(f => ({ ...f, date: e.target.value })); setErrors(er => ({ ...er, date: '' })); }}
+                      style={{
+                        border: 'none', outline: 'none', background: 'transparent',
+                        fontSize: '14px', color: '#111827', width: '100%', cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    />
+                  </div>
+                  {errors.date && <span style={{ color: '#EF4444', fontSize: '12px' }}>{errors.date}</span>}
+                </div>
               </div>
 
+              {/* Categoria */}
               <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>Categoria</label>
-                <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                  Categoria
+                </label>
+                <select
+                  style={{ ...inputStyle, cursor: 'pointer', borderColor: errors.category ? '#EF4444' : '#E5E7EB' }}
+                  value={form.category}
+                  onChange={e => { setForm(f => ({ ...f, category: e.target.value })); setErrors(er => ({ ...er, category: '' })); }}
+                >
                   <option value="">Selecione...</option>
                   {categories[form.type].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>Data</label>
-                <input style={inputStyle} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+                {errors.category && <span style={{ color: '#EF4444', fontSize: '12px' }}>{errors.category}</span>}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '28px' }}>
-              <button onClick={() => setShowModal(false)} style={{
-                flex: 1, height: '48px', borderRadius: '10px', border: '1px solid #E5E7EB',
-                background: 'white', fontSize: '14px', fontWeight: 600, color: '#64748B', cursor: 'pointer',
-              }}>Cancelar</button>
-              <button onClick={handleSave} style={{
-                flex: 1, height: '48px', borderRadius: '10px', border: 'none',
-                background: 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
-                fontSize: '14px', fontWeight: 600, color: 'white', cursor: 'pointer',
-              }}>{editingTransaction ? 'Salvar' : 'Criar'}</button>
+            {errors.submit && (
+              <p style={{ color: '#EF4444', fontSize: '13px', marginTop: '12px', textAlign: 'center' }}>
+                {errors.submit}
+              </p>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button
+                onClick={() => setShowModal(false)}
+                disabled={saving}
+                style={{
+                  flex: 1, height: '48px', borderRadius: '10px', border: '1px solid #E5E7EB',
+                  background: 'white', fontSize: '14px', fontWeight: 600, color: '#64748B', cursor: 'pointer',
+                }}
+              >Cancelar</button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                  flex: 1, height: '48px', borderRadius: '10px', border: 'none',
+                  background: saving ? '#94A3B8' : 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
+                  fontSize: '14px', fontWeight: 600, color: 'white',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                }}
+              >
+                {saving ? 'Salvando...' : (editingTransaction ? 'Salvar' : 'Criar')}
+              </button>
             </div>
           </div>
         </div>
