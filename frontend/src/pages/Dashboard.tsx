@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import api from '../services/api';
 import jsPDF from 'jspdf';
 import { useNavigate } from 'react-router-dom';
-
-
 
 interface Transaction {
   id: string;
@@ -31,6 +30,7 @@ interface TransactionForm {
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<Summary>({ income: 0, expense: 0, balance: 0 });
@@ -45,6 +45,10 @@ export function Dashboard() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // ✅ estado do modal de confirmação de exclusão
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const months = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -57,11 +61,14 @@ export function Dashboard() {
 
   useEffect(() => { fetchData(); }, [month, year]);
 
-  // Fecha o modal com Esc e trava o scroll do fundo enquanto ele está aberto
+  // Fecha os modais com Esc e trava o scroll do fundo enquanto algum está aberto
   useEffect(() => {
-    if (!showModal) return;
+    if (!showModal && !deletingTransaction) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setShowModal(false);
+      if (e.key === 'Escape') {
+        setShowModal(false);
+        if (!deleting) setDeletingTransaction(null);
+      }
     }
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
@@ -69,7 +76,7 @@ export function Dashboard() {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [showModal]);
+  }, [showModal, deletingTransaction, deleting]);
 
   async function fetchData() {
     setLoading(true);
@@ -131,23 +138,42 @@ export function Dashboard() {
       const data = { ...form, amount: parseFloat(form.amount) };
       if (editingTransaction) {
         await api.patch(`/transactions/${editingTransaction.id}`, data);
+        showToast('Transação atualizada com sucesso!', 'success');
       } else {
         await api.post('/transactions', data);
+        showToast('Transação criada com sucesso!', 'success');
       }
       setShowModal(false);
       fetchData();
     } catch (err) {
       console.error(err);
       setErrors({ submit: 'Erro ao salvar. Tente novamente.' });
+      showToast('Não foi possível salvar a transação.', 'error');
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Deseja deletar esta transação?')) return;
-    await api.delete(`/transactions/${id}`);
-    fetchData();
+  // ✅ abre o modal de confirmação em vez do confirm() nativo
+  function openDeleteModal(t: Transaction) {
+    setDeletingTransaction(t);
+  }
+
+  // ✅ executa a exclusão de fato, chamada pelo botão do modal
+  async function confirmDelete() {
+    if (!deletingTransaction) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/transactions/${deletingTransaction.id}`);
+      showToast('Transação excluída.', 'success');
+      setDeletingTransaction(null);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      showToast('Não foi possível excluir a transação.', 'error');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function formatCurrency(value: number) {
@@ -347,6 +373,31 @@ export function Dashboard() {
           border-color: #0F4CFF !important;
           box-shadow: 0 0 0 3px rgba(15,76,255,0.1);
         }
+        /* Barra de rolagem customizada da lista de transações */
+        .transactions-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #CBD5E1 transparent;
+        }
+        .transactions-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .transactions-scroll::-webkit-scrollbar-track {
+          background: transparent;
+          margin: 8px 0;
+        }
+        .transactions-scroll::-webkit-scrollbar-thumb {
+          background-color: #CBD5E1;
+          border-radius: 8px;
+        }
+        .transactions-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: #94A3B8;
+        }
+        .transaction-row {
+          transition: background 0.15s ease;
+        }
+        .transaction-row:hover {
+          background: #F8FAFC;
+        }
       `}</style>
 
       {/* Header */}
@@ -372,7 +423,7 @@ export function Dashboard() {
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 20px' }}>
 
         {/* Navegação de mês */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '28px' }}>
           <button onClick={prevMonth} style={{
             background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '10px',
             width: '40px', height: '40px', fontSize: '18px', cursor: 'pointer', color: '#334155',
@@ -387,7 +438,7 @@ export function Dashboard() {
         </div>
 
         {/* Cards resumo */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '28px' }}>
           <div style={{
             background: 'linear-gradient(135deg, #0F4CFF 0%, #10B981 100%)',
             borderRadius: '20px', padding: '24px', color: 'white',
@@ -408,11 +459,10 @@ export function Dashboard() {
 
         {/* Lista de transações */}
         <div style={{ background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '22px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>Transações</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '13px', color: '#94A3B8' }}>{transactions.length} {transactions.length === 1 ? 'item' : 'itens'}</span>
-              {/* ✅ Botão de relatório */}
               <button onClick={generatePDF} style={{
                 background: 'none', border: '1px solid #E5E7EB', borderRadius: '10px',
                 padding: '8px 16px', fontSize: '13px', fontWeight: 600,
@@ -428,53 +478,61 @@ export function Dashboard() {
             </div>
           </div>
 
-          {loading ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>Carregando...</div>
-          ) : transactions.length === 0 ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>
-              <p style={{ fontSize: '32px', margin: '0 0 8px 0' }}>📭</p>
-              <p style={{ margin: 0, fontSize: '15px' }}>Nenhuma transação neste mês</p>
-            </div>
-          ) : (
-            transactions.map((t, i) => (
-              <div key={t.id} style={{
-                padding: '16px 24px', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between',
-                borderBottom: i < transactions.length - 1 ? '1px solid #F1F5F9' : 'none',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{
-                    width: '42px', height: '42px', borderRadius: '12px',
-                    background: t.type === 'INCOME' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px',
-                  }}>
-                    {t.type === 'INCOME' ? '↑' : '↓'}
-                  </div>
-                  <div>
-                    <p style={{ margin: '0 0 2px 0', fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>{t.title}</p>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8' }}>{t.category} · {formatDate(t.date)}</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '15px', fontWeight: 700, color: t.type === 'INCOME' ? '#10B981' : '#EF4444' }}>
-                    {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
-                  </span>
-                  <button onClick={() => openEdit(t)} style={{
-                    background: '#F1F5F9', border: 'none', borderRadius: '8px',
-                    padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#64748B', fontWeight: 500,
-                  }}>Editar</button>
-                  <button onClick={() => handleDelete(t.id)} style={{
-                    background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px',
-                    padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#EF4444', fontWeight: 500,
-                  }}>Excluir</button>
-                </div>
+          {/* ✅ Container com scroll — max-height define quantos itens aparecem antes de rolar */}
+          <div className="transactions-scroll" style={{ maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+            {loading ? (
+              <div style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>Carregando...</div>
+            ) : transactions.length === 0 ? (
+              <div style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>
+                <p style={{ fontSize: '32px', margin: '0 0 8px 0' }}>📭</p>
+                <p style={{ margin: 0, fontSize: '15px' }}>Nenhuma transação neste mês</p>
               </div>
-            ))
-          )}
+            ) : (
+              transactions.map((t, i) => (
+                <div
+                  key={t.id}
+                  className="transaction-row"
+                  style={{
+                    padding: '18px 24px', display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: i < transactions.length - 1 ? '1px solid #F1F5F9' : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                      width: '42px', height: '42px', borderRadius: '12px',
+                      background: t.type === 'INCOME' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px',
+                      flexShrink: 0,
+                    }}>
+                      {t.type === 'INCOME' ? '↑' : '↓'}
+                    </div>
+                    <div>
+                      <p style={{ margin: '0 0 3px 0', fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>{t.title}</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8' }}>{t.category} · {formatDate(t.date)}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 700, color: t.type === 'INCOME' ? '#10B981' : '#EF4444', minWidth: '90px', textAlign: 'right' }}>
+                      {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
+                    </span>
+                    <button onClick={() => openEdit(t)} style={{
+                      background: '#F1F5F9', border: 'none', borderRadius: '8px',
+                      padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#64748B', fontWeight: 500,
+                    }}>Editar</button>
+                    <button onClick={() => openDeleteModal(t)} style={{
+                      background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px',
+                      padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#EF4444', fontWeight: 500,
+                    }}>Excluir</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal de criação/edição */}
       {showModal && (
         <div
           onClick={() => setShowModal(false)}
@@ -529,6 +587,8 @@ export function Dashboard() {
                   </button>
                 ))}
               </div>
+
+
 
               {/* Título */}
               <div>
@@ -644,6 +704,74 @@ export function Dashboard() {
                 }}
               >
                 {saving ? 'Salvando...' : (editingTransaction ? 'Salvar' : 'Criar')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Modal de confirmação de exclusão */}
+      {deletingTransaction && (
+        <div
+          onClick={() => !deleting && setDeletingTransaction(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1100, padding: '20px', backdropFilter: 'blur(2px)',
+            animation: 'fadeIn 0.15s ease-out',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#FFFFFF', borderRadius: '24px', padding: '32px',
+              width: '100%', maxWidth: '380px',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.2)',
+              animation: 'slideUp 0.2s ease-out',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '50%',
+              background: 'rgba(239,68,68,0.1)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              fontSize: '24px', margin: '0 auto 16px',
+            }}>🗑️</div>
+
+            <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>
+              Excluir transação?
+            </h2>
+            <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#64748B' }}>
+              Tem certeza que deseja excluir
+            </p>
+            <p style={{ margin: '0 0 24px 0', fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+              "{deletingTransaction.title}"?
+            </p>
+            <p style={{ margin: '0 0 24px 0', fontSize: '12px', color: '#94A3B8' }}>
+              Essa ação não pode ser desfeita.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setDeletingTransaction(null)}
+                disabled={deleting}
+                style={{
+                  flex: 1, height: '48px', borderRadius: '10px', border: '1px solid #E5E7EB',
+                  background: 'white', fontSize: '14px', fontWeight: 600, color: '#64748B',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                }}
+              >Cancelar</button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                style={{
+                  flex: 1, height: '48px', borderRadius: '10px', border: 'none',
+                  background: deleting ? '#94A3B8' : '#EF4444',
+                  fontSize: '14px', fontWeight: 600, color: 'white',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {deleting ? 'Excluindo...' : 'Excluir'}
               </button>
             </div>
           </div>
