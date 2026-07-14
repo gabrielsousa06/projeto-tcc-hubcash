@@ -45,7 +45,6 @@ export function Dashboard() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // ✅ estado do modal de confirmação de exclusão
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -61,7 +60,6 @@ export function Dashboard() {
 
   useEffect(() => { fetchData(); }, [month, year]);
 
-  // Fecha os modais com Esc e trava o scroll do fundo enquanto algum está aberto
   useEffect(() => {
     if (!showModal && !deletingTransaction) return;
     function onKey(e: KeyboardEvent) {
@@ -115,7 +113,6 @@ export function Dashboard() {
   }
 
   function handleAmountChange(raw: string) {
-    // aceita só dígitos e vírgula/ponto, evita letras/símbolos por engano
     const clean = raw.replace(/[^\d,.]/g, '').replace(',', '.');
     setForm(f => ({ ...f, amount: clean }));
     setErrors(er => ({ ...er, amount: '' }));
@@ -154,12 +151,10 @@ export function Dashboard() {
     }
   }
 
-  // ✅ abre o modal de confirmação em vez do confirm() nativo
   function openDeleteModal(t: Transaction) {
     setDeletingTransaction(t);
   }
 
-  // ✅ executa a exclusão de fato, chamada pelo botão do modal
   async function confirmDelete() {
     if (!deletingTransaction) return;
     setDeleting(true);
@@ -194,7 +189,6 @@ export function Dashboard() {
     else setMonth(m => m + 1);
   }
 
-  // ✅ adiciona essa função antes do generatePDF
   function getPDFValueFontSize(value: number): number {
     const formatted = formatCurrency(value);
     if (formatted.length > 12) return 7;
@@ -202,12 +196,10 @@ export function Dashboard() {
     return 9;
   }
 
-  // ✅ Função de gerar relatório PDF
   function generatePDF() {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Cabeçalho
     doc.setFillColor(15, 76, 255);
     doc.rect(0, 0, pageWidth, 40, 'F');
     doc.setTextColor(255, 255, 255);
@@ -219,12 +211,10 @@ export function Dashboard() {
     doc.text(`Relatório Financeiro — ${months[month - 1]} ${year}`, 14, 30);
     doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 14, 30, { align: 'right' });
 
-    // Info do usuário
     doc.setTextColor(100, 116, 139);
     doc.setFontSize(11);
     doc.text(`Usuário: ${user?.name}`, 14, 52);
 
-    // Cards resumo
     let y = 65;
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
@@ -232,7 +222,6 @@ export function Dashboard() {
     doc.text('Resumo do Mês', 14, y);
     y += 10;
 
-    // Saldo
     doc.setFillColor(240, 245, 255);
     doc.roundedRect(14, y, pageWidth - 28, 28, 4, 4, 'F');
     doc.setFontSize(11);
@@ -245,7 +234,6 @@ export function Dashboard() {
     doc.text(formatCurrency(summary.balance), 22, y + 22);
     y += 36;
 
-    // Entradas e Saídas lado a lado
     const halfWidth = (pageWidth - 28) / 2 - 4;
     doc.setFillColor(240, 253, 244);
     doc.roundedRect(14, y, halfWidth, 28, 4, 4, 'F');
@@ -270,14 +258,12 @@ export function Dashboard() {
     doc.text(formatCurrency(summary.expense), 14 + halfWidth + 16, y + 22);
     y += 44;
 
-    // Título da lista
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
     doc.text('Transações', 14, y);
     y += 8;
 
-    // Cabeçalho da tabela — ✅ sem coluna TIPO
     doc.setFillColor(241, 245, 249);
     doc.rect(14, y, pageWidth - 28, 10, 'F');
     doc.setFontSize(9);
@@ -289,7 +275,6 @@ export function Dashboard() {
     doc.text('VALOR', 165, y + 7);
     y += 14;
 
-    // Linhas da tabela — ✅ sem coluna TIPO
     if (transactions.length === 0) {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(148, 163, 184);
@@ -313,7 +298,6 @@ export function Dashboard() {
         doc.text(t.title.length > 28 ? t.title.substring(0, 28) + '...' : t.title, 50, y + 4);
         doc.text(t.category, 115, y + 4);
 
-        // ✅ apenas valor, alinhado à direita
         if (t.type === 'INCOME') {
           doc.setFontSize(getPDFValueFontSize(t.amount));
           doc.setTextColor(16, 185, 129);
@@ -328,7 +312,6 @@ export function Dashboard() {
       });
     }
 
-    // Rodapé
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.setFillColor(241, 245, 249);
     doc.rect(0, pageHeight - 16, pageWidth, 16, 'F');
@@ -355,7 +338,7 @@ export function Dashboard() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)', fontFamily: "'Inter', sans-serif", overflowX: 'hidden' }}>
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -373,7 +356,6 @@ export function Dashboard() {
           border-color: #0F4CFF !important;
           box-shadow: 0 0 0 3px rgba(15,76,255,0.1);
         }
-        /* Barra de rolagem customizada da lista de transações */
         .transactions-scroll {
           scrollbar-width: thin;
           scrollbar-color: #CBD5E1 transparent;
@@ -398,17 +380,112 @@ export function Dashboard() {
         .transaction-row:hover {
           background: #F8FAFC;
         }
+
+        /* ===== Responsividade mobile ===== */
+        @media (max-width: 640px) {
+          .db-header {
+            padding: 12px 16px !important;
+          }
+          .db-logo {
+            width: 110px !important;
+          }
+          .db-header-user {
+            display: none !important;
+          }
+          .db-header-actions {
+            gap: 8px !important;
+          }
+          .db-header-actions button {
+            padding: 7px 12px !important;
+            font-size: 13px !important;
+          }
+          .db-container {
+            padding: 20px 12px !important;
+          }
+          .db-month-nav {
+            gap: 12px !important;
+            margin-bottom: 20px !important;
+          }
+          .db-month-nav span {
+            font-size: 17px !important;
+            min-width: 140px !important;
+          }
+          .db-summary-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+            margin-bottom: 20px !important;
+          }
+          .db-card-balance {
+            grid-column: 1 / -1;
+            padding: 18px !important;
+          }
+          .db-card {
+            padding: 16px !important;
+          }
+          .db-card p:last-child {
+            font-size: 20px !important;
+          }
+          .db-list-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            padding: 16px !important;
+          }
+          .db-list-header-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+          }
+          .db-list-actions {
+            display: flex !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .db-list-actions button {
+            flex: 1 !important;
+            justify-content: center !important;
+            font-size: 12px !important;
+            padding: 8px 10px !important;
+          }
+          .transaction-row {
+            padding: 14px 16px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .db-trans-info {
+            width: 100%;
+          }
+          .db-trans-right {
+            width: 100% !important;
+            justify-content: space-between !important;
+          }
+          .db-trans-right span {
+            min-width: 0 !important;
+          }
+          .db-trans-actions {
+            display: flex;
+            gap: 8px;
+          }
+          .db-modal-card {
+            padding: 20px !important;
+            border-radius: 18px !important;
+          }
+          .db-form-row {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       {/* Header */}
-      <div style={{
+      <div className="db-header" style={{
         background: '#FFFFFF', borderBottom: '1px solid #E5E7EB',
         padding: '16px 32px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}>
-        <img src="/logo.png" alt="HubCash" style={{ width: '140px', objectFit: 'contain' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ color: '#334155', fontSize: '14px', fontWeight: 500 }}>Olá, {user?.name}!</span>
+        <img className="db-logo" src="/logo.png" alt="HubCash" style={{ width: '140px', objectFit: 'contain' }} />
+        <div className="db-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span className="db-header-user" style={{ color: '#334155', fontSize: '14px', fontWeight: 500 }}>Olá, {user?.name}!</span>
           <button onClick={() => navigate('/profile')} style={{
             background: 'none', border: '1px solid #E5E7EB', borderRadius: '10px',
             padding: '8px 16px', fontSize: '14px', color: '#64748B', cursor: 'pointer', fontWeight: 500,
@@ -420,26 +497,26 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 20px' }}>
+      <div className="db-container" style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 20px' }}>
 
         {/* Navegação de mês */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '28px' }}>
+        <div className="db-month-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '28px' }}>
           <button onClick={prevMonth} style={{
             background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '10px',
-            width: '40px', height: '40px', fontSize: '18px', cursor: 'pointer', color: '#334155',
+            width: '40px', height: '40px', fontSize: '18px', cursor: 'pointer', color: '#334155', flexShrink: 0,
           }}>‹</button>
           <span style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', minWidth: '180px', textAlign: 'center' }}>
             {months[month - 1]} {year}
           </span>
           <button onClick={nextMonth} style={{
             background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '10px',
-            width: '40px', height: '40px', fontSize: '18px', cursor: 'pointer', color: '#334155',
+            width: '40px', height: '40px', fontSize: '18px', cursor: 'pointer', color: '#334155', flexShrink: 0,
           }}>›</button>
         </div>
 
         {/* Cards resumo */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '28px' }}>
-          <div style={{
+        <div className="db-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '28px' }}>
+          <div className="db-card db-card-balance" style={{
             background: 'linear-gradient(135deg, #0F4CFF 0%, #10B981 100%)',
             borderRadius: '20px', padding: '24px', color: 'white',
             boxShadow: '0 10px 25px rgba(15,76,255,0.2)',
@@ -447,11 +524,11 @@ export function Dashboard() {
             <p style={{ margin: '0 0 8px 0', fontSize: '13px', opacity: 0.85, fontWeight: 500 }}>Saldo do Mês</p>
             <p style={{ margin: 0, fontSize: '26px', fontWeight: 700 }}>{formatCurrency(summary.balance)}</p>
           </div>
-          <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}>
+          <div className="db-card" style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}>
             <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#64748B', fontWeight: 500 }}>↑ Entradas</p>
             <p style={{ margin: 0, fontSize: '26px', fontWeight: 700, color: '#10B981' }}>{formatCurrency(summary.income)}</p>
           </div>
-          <div style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}>
+          <div className="db-card" style={{ background: '#FFFFFF', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB' }}>
             <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#64748B', fontWeight: 500 }}>↓ Saídas</p>
             <p style={{ margin: 0, fontSize: '26px', fontWeight: 700, color: '#EF4444' }}>{formatCurrency(summary.expense)}</p>
           </div>
@@ -459,10 +536,12 @@ export function Dashboard() {
 
         {/* Lista de transações */}
         <div style={{ background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-          <div style={{ padding: '22px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>Transações</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="db-list-header" style={{ padding: '22px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="db-list-header-top">
+              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>Transações</h2>
               <span style={{ fontSize: '13px', color: '#94A3B8' }}>{transactions.length} {transactions.length === 1 ? 'item' : 'itens'}</span>
+            </div>
+            <div className="db-list-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button onClick={generatePDF} style={{
                 background: 'none', border: '1px solid #E5E7EB', borderRadius: '10px',
                 padding: '8px 16px', fontSize: '13px', fontWeight: 600,
@@ -478,7 +557,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* ✅ Container com scroll — max-height define quantos itens aparecem antes de rolar */}
           <div className="transactions-scroll" style={{ maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
             {loading ? (
               <div style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>Carregando...</div>
@@ -498,7 +576,7 @@ export function Dashboard() {
                     borderBottom: i < transactions.length - 1 ? '1px solid #F1F5F9' : 'none',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div className="db-trans-info" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
                       width: '42px', height: '42px', borderRadius: '12px',
                       background: t.type === 'INCOME' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
@@ -512,18 +590,20 @@ export function Dashboard() {
                       <p style={{ margin: 0, fontSize: '12px', color: '#94A3B8' }}>{t.category} · {formatDate(t.date)}</p>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div className="db-trans-right" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 700, color: t.type === 'INCOME' ? '#10B981' : '#EF4444', minWidth: '90px', textAlign: 'right' }}>
                       {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
                     </span>
-                    <button onClick={() => openEdit(t)} style={{
-                      background: '#F1F5F9', border: 'none', borderRadius: '8px',
-                      padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#64748B', fontWeight: 500,
-                    }}>Editar</button>
-                    <button onClick={() => openDeleteModal(t)} style={{
-                      background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px',
-                      padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#EF4444', fontWeight: 500,
-                    }}>Excluir</button>
+                    <div className="db-trans-actions">
+                      <button onClick={() => openEdit(t)} style={{
+                        background: '#F1F5F9', border: 'none', borderRadius: '8px',
+                        padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#64748B', fontWeight: 500,
+                      }}>Editar</button>
+                      <button onClick={() => openDeleteModal(t)} style={{
+                        background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px',
+                        padding: '6px 12px', fontSize: '12px', cursor: 'pointer', color: '#EF4444', fontWeight: 500, marginLeft: '8px',
+                      }}>Excluir</button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -544,6 +624,7 @@ export function Dashboard() {
           }}
         >
           <div
+            className="db-modal-card"
             onClick={e => e.stopPropagation()}
             style={{
               background: '#FFFFFF', borderRadius: '24px', padding: '32px',
@@ -568,7 +649,6 @@ export function Dashboard() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Tipo */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 {(['INCOME', 'EXPENSE'] as const).map(type => (
                   <button
@@ -588,9 +668,6 @@ export function Dashboard() {
                 ))}
               </div>
 
-
-
-              {/* Título */}
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
                   Título
@@ -605,8 +682,7 @@ export function Dashboard() {
                 {errors.title && <span style={{ color: '#EF4444', fontSize: '12px' }}>{errors.title}</span>}
               </div>
 
-              {/* Valor + Data lado a lado */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="db-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
                     Valor
@@ -634,7 +710,6 @@ export function Dashboard() {
                   <div
                     onClick={(e) => {
                       const input = e.currentTarget.querySelector('input');
-                      // showPicker existe nos navegadores modernos (Chrome, Edge)
                       // @ts-ignore
                       input?.showPicker?.();
                     }}
@@ -660,7 +735,6 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Categoria */}
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
                   Categoria
@@ -710,7 +784,7 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* ✅ Modal de confirmação de exclusão */}
+      {/* Modal de confirmação de exclusão */}
       {deletingTransaction && (
         <div
           onClick={() => !deleting && setDeletingTransaction(null)}
@@ -722,6 +796,7 @@ export function Dashboard() {
           }}
         >
           <div
+            className="db-modal-card"
             onClick={e => e.stopPropagation()}
             style={{
               background: '#FFFFFF', borderRadius: '24px', padding: '32px',
