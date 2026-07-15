@@ -60,6 +60,9 @@ export function Dashboard() {
     EXPENSE: ['Alimentação', 'Academia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Moradia', 'Outros'],
   };
 
+  const [filterType, setFilterType] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
+  const [filterCategory, setFilterCategory] = useState('');
+
   useEffect(() => { fetchData(); }, [month, year]);
 
   useEffect(() => {
@@ -341,8 +344,16 @@ export function Dashboard() {
     background: '#F8FAFC',
   };
 
+  const filteredTransactions = transactions.filter(t => {
+    if (filterType !== 'ALL' && t.type !== filterType) return false;
+    if (filterCategory && t.category !== filterCategory) return false;
+    return true;
+  });
+
+  const allCategories = [...new Set(transactions.map(t => t.category))];
+
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)', fontFamily: "'Inter', sans-serif", overflowX: 'hidden' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -501,7 +512,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="db-container" style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 20px' }}>
+      <div className="db-container" style={{ maxWidth: '900px', width: '100%', margin: '0 auto', padding: '24px 20px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Navegação de mês */}
         <div className="db-month-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '28px' }}>
@@ -538,12 +549,65 @@ export function Dashboard() {
           </div>
         </div>
 
+           {/* Filtros */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {(['ALL', 'INCOME', 'EXPENSE'] as const).map(type => (
+            <button
+              key={type}
+              onClick={() => setFilterType(type)}
+              style={{
+                padding: '7px 16px', borderRadius: '999px', border: '1.5px solid',
+                borderColor: filterType === type
+                  ? type === 'INCOME' ? '#10B981' : type === 'EXPENSE' ? '#EF4444' : '#0F4CFF'
+                  : '#E5E7EB',
+                background: filterType === type
+                  ? type === 'INCOME' ? 'rgba(16,185,129,0.1)' : type === 'EXPENSE' ? 'rgba(239,68,68,0.1)' : 'rgba(15,76,255,0.1)'
+                  : 'white',
+                color: filterType === type
+                  ? type === 'INCOME' ? '#10B981' : type === 'EXPENSE' ? '#EF4444' : '#0F4CFF'
+                  : '#64748B',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s ease',
+              }}
+            >
+              {type === 'ALL' ? 'Todos' : type === 'INCOME' ? '↑ Entradas' : '↓ Saídas'}
+            </button>
+          ))}
+
+          {allCategories.length > 0 && (
+            <select
+              value={filterCategory}
+              onChange={e => setFilterCategory(e.target.value)}
+              style={{
+                padding: '7px 16px', borderRadius: '999px', border: '1.5px solid',
+                borderColor: filterCategory ? '#0F4CFF' : '#E5E7EB',
+                background: filterCategory ? 'rgba(15,76,255,0.1)' : 'white',
+                color: filterCategory ? '#0F4CFF' : '#64748B',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer', outline: 'none',
+              }}
+            >
+              <option value="">Todas as categorias</option>
+              {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
+
+          {(filterType !== 'ALL' || filterCategory) && (
+            <button
+              onClick={() => { setFilterType('ALL'); setFilterCategory(''); }}
+              style={{
+                padding: '7px 16px', borderRadius: '999px', border: '1.5px solid #E5E7EB',
+                background: 'white', color: '#94A3B8', fontSize: '13px',
+                fontWeight: 600, cursor: 'pointer',
+              }}
+            >✕ Limpar</button>
+          )}
+        </div>
+
         {/* Lista de transações */}
-        <div style={{ background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+        <div style={{ background: '#FFFFFF', borderRadius: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div className="db-list-header" style={{ padding: '22px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="db-list-header-top">
               <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>Transações</h2>
-              <span style={{ fontSize: '13px', color: '#94A3B8' }}>{transactions.length} {transactions.length === 1 ? 'item' : 'itens'}</span>
+              <span style={{ fontSize: '13px', color: '#94A3B8' }}>{filteredTransactions.length} {filteredTransactions.length === 1 ? 'item' : 'itens'}</span>
             </div>
             <div className="db-list-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button onClick={generatePDF} style={{
@@ -561,23 +625,23 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="transactions-scroll" style={{ maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="transactions-scroll" style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
             {loading ? (
               <div style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>Carregando...</div>
-            ) : transactions.length === 0 ? (
+            ) : filteredTransactions.length === 0 ? (
               <div style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>
                 <p style={{ fontSize: '32px', margin: '0 0 8px 0' }}>📭</p>
                 <p style={{ margin: 0, fontSize: '15px' }}>Nenhuma transação neste mês</p>
               </div>
             ) : (
-              transactions.map((t, i) => (
+              filteredTransactions.map((t, i) => (
                 <div
                   key={t.id}
                   className="transaction-row"
                   style={{
                     padding: '18px 24px', display: 'flex', alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderBottom: i < transactions.length - 1 ? '1px solid #F1F5F9' : 'none',
+                    borderBottom: i < filteredTransactions.length - 1 ? '1px solid #F1F5F9' : 'none',
                   }}
                 >
                   <div className="db-trans-info" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
