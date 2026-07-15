@@ -48,6 +48,8 @@ export function Dashboard() {
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const [customCategory, setCustomCategory] = useState(false);
+
   const months = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -96,6 +98,7 @@ export function Dashboard() {
     setEditingTransaction(null);
     setForm({ title: '', amount: '', type: 'INCOME', category: '', date: '' });
     setErrors({});
+    setCustomCategory(false);
     setShowModal(true);
   }
 
@@ -109,6 +112,7 @@ export function Dashboard() {
       date: t.date.split('T')[0],
     });
     setErrors({});
+    setCustomCategory(!categories[t.type].includes(t.category));
     setShowModal(true);
   }
 
@@ -739,14 +743,46 @@ export function Dashboard() {
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
                   Categoria
                 </label>
-                <select
-                  style={{ ...inputStyle, cursor: 'pointer', borderColor: errors.category ? '#EF4444' : '#E5E7EB' }}
-                  value={form.category}
-                  onChange={e => { setForm(f => ({ ...f, category: e.target.value })); setErrors(er => ({ ...er, category: '' })); }}
-                >
-                  <option value="">Selecione...</option>
-                  {categories[form.type].map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+
+                {!customCategory ? (
+                  <select
+                    style={{ ...inputStyle, cursor: 'pointer', borderColor: errors.category ? '#EF4444' : '#E5E7EB' }}
+                    value={form.category}
+                    onChange={e => {
+                      if (e.target.value === 'custom') {
+                        setCustomCategory(true);
+                        setForm(f => ({ ...f, category: '' }));
+                      } else {
+                        setForm(f => ({ ...f, category: e.target.value }));
+                        setErrors(er => ({ ...er, category: '' }));
+                      }
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    {categories[form.type].map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="custom">✏️ Personalizar...</option>
+                  </select>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      autoFocus
+                      style={{ ...inputStyle, flex: 1, borderColor: errors.category ? '#EF4444' : '#E5E7EB' }}
+                      value={form.category}
+                      onChange={e => { setForm(f => ({ ...f, category: e.target.value })); setErrors(er => ({ ...er, category: '' })); }}
+                      placeholder="Digite a categoria..."
+                    />
+                    <button
+                      onClick={() => { setCustomCategory(false); setForm(f => ({ ...f, category: '' })); }}
+                      style={{
+                        height: '48px', padding: '0 12px', borderRadius: '10px',
+                        border: '1px solid #E5E7EB', background: '#F1F5F9',
+                        cursor: 'pointer', fontSize: '13px', color: '#64748B', fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >← Voltar</button>
+                  </div>
+                )}
+
                 {errors.category && <span style={{ color: '#EF4444', fontSize: '12px' }}>{errors.category}</span>}
               </div>
             </div>
