@@ -43,6 +43,13 @@ export class UsersService {
     return userWithoutPassword;
   }
 
+  async updatePassword(id: string, hashedPassword: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+  }
+
   async delete(id: string) {
   await this.prisma.transaction.deleteMany({
     where: { userId: id },

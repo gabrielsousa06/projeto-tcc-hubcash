@@ -44,4 +44,18 @@ export class AuthService {
 
     return { access_token: token };
   }
+
+  async resetPassword(email: string, newPassword: string) {
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new BadRequestException('Email não encontrado');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    await this.usersService.updatePassword(user.id, hashedPassword);
+
+    return { message: 'Senha redefinida com sucesso!' };
+  }
 }

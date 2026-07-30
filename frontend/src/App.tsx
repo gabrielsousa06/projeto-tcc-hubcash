@@ -5,6 +5,10 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
+import { ForgotPassword } from './pages/ForgotPassword';
+
+
+
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { signed, loading } = useAuth();
@@ -24,6 +28,7 @@ function App() {
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/login" />} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
           </Routes>
         </ToastProvider>
       </AuthProvider>

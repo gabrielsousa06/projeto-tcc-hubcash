@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://hubcash-backend.onrender.com',
+  baseURL: 'http://localhost:3000',
 });
 
 api.interceptors.request.use((config) => {
@@ -13,3 +13,5 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+
+// https://hubcash-backend.onrender.com
