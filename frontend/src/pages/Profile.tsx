@@ -74,102 +74,83 @@ export function Profile() {
       background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)',
       fontFamily: "'Inter', sans-serif",
     }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .prof-header { padding: 12px 16px !important; }
+          .prof-logo { width: 100px !important; }
+          .prof-header-btn { padding: 6px 12px !important; font-size: 13px !important; }
+          .prof-container { padding: 20px 16px !important; }
+          .prof-card { padding: 24px 20px !important; }
+          .prof-danger { padding: 20px !important; }
+        }
+      `}</style>
 
       {/* Header */}
-      <div style={{
+      <div className="prof-header" style={{
         background: '#FFFFFF', borderBottom: '1px solid #E5E7EB',
         padding: '16px 32px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}>
-        <img src="/logo.png" alt="HubCash" style={{ width: '140px', objectFit: 'contain' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={() => navigate('/dashboard')} style={{
+        <img className="prof-logo" src="/logo.png" alt="HubCash" style={{ width: '140px', objectFit: 'contain' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button className="prof-header-btn" onClick={() => navigate('/dashboard')} style={{
             background: 'none', border: '1px solid #E5E7EB', borderRadius: '10px',
             padding: '8px 16px', fontSize: '14px', color: '#64748B', cursor: 'pointer', fontWeight: 500,
           }}>← Voltar</button>
-          <button onClick={signOut} style={{
+          <button className="prof-header-btn" onClick={signOut} style={{
             background: 'none', border: '2px solid #e63737ff', borderRadius: '10px',
             padding: '8px 16px', fontSize: '14px', color: '#e63737ff', cursor: 'pointer', fontWeight: 400,
           }}>Sair</button>
         </div>
       </div>
 
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '40px 20px' }}>
-
+      <div className="prof-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px 20px' }}>
+        
         {/* Avatar */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '0 4px' }}>
           <div style={{
-            width: '80px', height: '80px', borderRadius: '50%',
+            width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
             background: 'linear-gradient(135deg, #0F4CFF 0%, #10B981 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 12px',
-            boxShadow: '0 8px 20px rgba(15,76,255,0.25)',
+            boxShadow: '0 4px 12px rgba(15,76,255,0.25)',
           }}>
-            <span style={{ fontSize: '32px', fontWeight: 700, color: 'white' }}>
+            <span style={{ fontSize: '20px', fontWeight: 700, color: 'white' }}>
               {user?.name?.charAt(0).toUpperCase()}
             </span>
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
-            {user?.name}
-          </h1>
-          <p style={{ fontSize: '14px', color: '#94A3B8', margin: 0 }}>{user?.email}</p>
+          <div>
+            <h1 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: '0 0 2px 0' }}>{user?.name}</h1>
+            <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0 }}>{user?.email}</p>
+          </div>
         </div>
 
         {/* Card de edição */}
-        <div style={{
+        <div className="prof-card" style={{
           background: '#FFFFFF', borderRadius: '24px', padding: '40px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB',
-          marginBottom: '20px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #E5E7EB', marginBottom: '20px',
         }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 24px 0' }}>
-            Editar Perfil
-          </h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 24px 0' }}>Editar Perfil</h2>
 
           {success && (
-            <div style={{
-              background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#16A34A',
-              padding: '14px', borderRadius: '12px', marginBottom: '20px', fontSize: '14px',
-            }}>
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#16A34A', padding: '14px', borderRadius: '12px', marginBottom: '20px', fontSize: '14px' }}>
               ✅ {success}
             </div>
           )}
-
           {error && (
-            <div style={{
-              background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626',
-              padding: '14px', borderRadius: '12px', marginBottom: '20px', fontSize: '14px',
-            }}>
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '14px', borderRadius: '12px', marginBottom: '20px', fontSize: '14px' }}>
               {error}
             </div>
           )}
 
           <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
-                Nome
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                style={inputStyle}
-                required
-              />
+              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>Nome</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} style={inputStyle} required />
             </div>
-
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
-                E-mail
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                style={inputStyle}
-                required
-              />
+              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>E-mail</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} required />
             </div>
-
             <div>
               <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
                 Nova Senha <span style={{ color: '#94A3B8', fontWeight: 400 }}>(deixe em branco para manter)</span>
@@ -182,58 +163,42 @@ export function Profile() {
                   placeholder="••••••••"
                   style={{ ...inputStyle, paddingRight: '50px' }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  style={{
-                    position: 'absolute', right: '16px', top: '50%',
-                    transform: 'translateY(-50%)', background: 'none',
-                    border: 'none', cursor: 'pointer', color: '#94A3B8',
-                    padding: 0, display: 'flex', alignItems: 'center',
-                  }}
-                >
+                <button type="button" onClick={() => setShowPassword(s => !s)} style={{
+                  position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0, display: 'flex', alignItems: 'center',
+                }}>
                   {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%', height: '52px', borderRadius: '999px', border: 'none',
-                background: loading ? '#94A3B8' : 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
-                color: '#FFFFFF', fontSize: '16px', fontWeight: 700,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 10px 25px rgba(15,76,255,0.25)',
-                transition: 'all 0.2s ease', marginTop: '4px',
-              }}
-            >
+            <button type="submit" disabled={loading} style={{
+              width: '100%', height: '52px', borderRadius: '999px', border: 'none',
+              background: loading ? '#94A3B8' : 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
+              color: '#FFFFFF', fontSize: '16px', fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 10px 25px rgba(15,76,255,0.25)', transition: 'all 0.2s ease', marginTop: '4px',
+            }}>
               {loading ? 'Salvando...' : 'Salvar alterações'}
             </button>
           </form>
         </div>
 
         {/* Card de deletar conta */}
-        <div style={{
+        <div className="prof-danger" style={{
           background: '#FFFFFF', borderRadius: '24px', padding: '28px 40px',
           boxShadow: '0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #FEE2E2',
         }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#DC2626', margin: '0 0 8px 0' }}>
-            Zona de perigo
-          </h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#DC2626', margin: '0 0 8px 0' }}>Zona de perigo</h2>
           <p style={{ fontSize: '14px', color: '#94A3B8', margin: '0 0 16px 0' }}>
             Ao deletar sua conta, todos os dados serão perdidos permanentemente.
           </p>
-
           {!showDeleteConfirm ? (
             <button onClick={() => setShowDeleteConfirm(true)} style={{
               background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
               borderRadius: '10px', padding: '10px 20px', fontSize: '14px',
               fontWeight: 600, color: '#EF4444', cursor: 'pointer',
-            }}>
-              Deletar minha conta
-            </button>
+            }}>Deletar minha conta</button>
           ) : (
             <div style={{ display: 'flex', gap: '12px' }}>
               <button onClick={() => setShowDeleteConfirm(false)} style={{

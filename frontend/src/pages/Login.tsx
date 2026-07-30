@@ -52,20 +52,28 @@ export function Login() {
       padding: '40px 20px 20px',
       fontFamily: "'Inter', sans-serif",
     }}>
-      <div style={{ width: '100%', maxWidth: '520px' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .login-logo { width: 200px !important; margin-bottom: -20px !important; }
+          .login-card { padding: 28px 20px !important; border-radius: 20px !important; }
+          .login-title { font-size: 26px !important; }
+          .login-wrapper { padding: 16px 16px 20px !important; }
+        }
+      `}</style>
+      <div className="login-wrapper" style={{ width: '100%', maxWidth: '520px' }}>
 
         {/* Logo */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '10px' }}>
-          <img src="/logo.png" alt="HubCash" style={{ width: '400px', objectFit: 'contain', marginBottom: '-40px' }} />
+          <img className="login-logo" src="/logo.png" alt="HubCash" style={{ width: '400px', objectFit: 'contain', marginBottom: '-40px' }} />
         </div>
 
         {/* Card */}
-        <div style={{
+        <div className="login-card" style={{
           background: '#FFFFFF', borderRadius: '28px', padding: '45px',
           boxShadow: '0 20px 50px rgba(15, 23, 42, 0.08)',
           border: '1px solid rgba(226,232,240,0.8)',
         }}>
-          <h1 style={{ textAlign: 'center', fontSize: '38px', fontWeight: 700, color: '#0F172A', marginTop: 0, marginBottom: '10px' }}>
+          <h1 className="login-title" style={{ textAlign: 'center', fontSize: '38px', fontWeight: 700, color: '#0F172A', marginTop: 0, marginBottom: '10px' }}>
             Acesse sua conta
           </h1>
           <p style={{ textAlign: 'center', color: '#64748B', fontSize: '15px', marginBottom: '35px' }}>
@@ -86,21 +94,13 @@ export function Login() {
               <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
                 E-mail
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-                style={inputStyle}
-              />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required style={inputStyle} />
             </div>
 
             <div>
               <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
                 Senha
               </label>
-              {/* ✅ wrapper com posição relativa */}
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -110,24 +110,10 @@ export function Login() {
                   required
                   style={{ ...inputStyle, paddingRight: '50px' }}
                 />
-                {/* ✅ botão olhinho */}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  style={{
-                    position: 'absolute',
-                    right: '16px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#94A3B8',
-                    padding: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
+                <button type="button" onClick={() => setShowPassword(s => !s)} style={{
+                  position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0, display: 'flex', alignItems: 'center',
+                }}>
                   {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                 </button>
               </div>
@@ -139,18 +125,13 @@ export function Login() {
               </Link>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%', height: '58px', borderRadius: '999px', border: 'none',
-                background: loading ? '#94A3B8' : 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
-                color: '#FFFFFF', fontSize: '17px', fontWeight: 700,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 10px 25px rgba(15,76,255,0.25)',
-                transition: 'all 0.2s ease',
-              }}
-            >
+            <button type="submit" disabled={loading} style={{
+              width: '100%', height: '58px', borderRadius: '999px', border: 'none',
+              background: loading ? '#94A3B8' : 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
+              color: '#FFFFFF', fontSize: '17px', fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 10px 25px rgba(15,76,255,0.25)', transition: 'all 0.2s ease',
+            }}>
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>

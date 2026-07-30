@@ -52,20 +52,28 @@ export function Register() {
       padding: '5px 20px 20px',
       fontFamily: "'Inter', sans-serif",
     }}>
-      <div style={{ width: '100%', maxWidth: '620px' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .reg-logo { width: 180px !important; margin-bottom: -10px !important; }
+          .reg-card { padding: 28px 20px !important; border-radius: 20px !important; }
+          .reg-title { font-size: 26px !important; }
+          .reg-wrapper { max-width: 100% !important; }
+        }
+      `}</style>
+      <div className="reg-wrapper" style={{ width: '100%', maxWidth: '620px' }}>
 
         {/* Logo */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '4px' }}>
-          <img src="/logo.png" alt="HubCash" style={{ width: '380px', objectFit: 'contain', marginBottom: '-30px' }} />
+          <img className="reg-logo" src="/logo.png" alt="HubCash" style={{ width: '380px', objectFit: 'contain', marginBottom: '-30px' }} />
         </div>
 
         {/* Card */}
-        <div style={{
+        <div className="reg-card" style={{
           background: '#FFFFFF', borderRadius: '28px', padding: '50px 60px',
           boxShadow: '0 20px 50px rgba(15, 23, 42, 0.08)',
           border: '1px solid rgba(226,232,240,0.8)',
         }}>
-          <h1 style={{ textAlign: 'center', fontSize: '34px', fontWeight: 700, color: '#0F172A', marginTop: 0, marginBottom: '10px' }}>
+          <h1 className="reg-title" style={{ textAlign: 'center', fontSize: '34px', fontWeight: 700, color: '#0F172A', marginTop: 0, marginBottom: '10px' }}>
             Criar conta
           </h1>
           <p style={{ textAlign: 'center', color: '#64748B', fontSize: '15px', marginBottom: '35px' }}>
@@ -83,38 +91,17 @@ export function Register() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
-                Nome
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome completo"
-                required
-                style={inputStyle}
-              />
+              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>Nome</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome completo" required style={inputStyle} />
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
-                E-mail
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-                style={inputStyle}
-              />
+              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>E-mail</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required style={inputStyle} />
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>
-                Senha
-              </label>
-              {/* ✅ wrapper com posição relativa */}
+              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontSize: '14px', fontWeight: 600 }}>Senha</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -124,41 +111,22 @@ export function Register() {
                   required
                   style={{ ...inputStyle, paddingRight: '50px' }}
                 />
-                {/* ✅ botão olhinho */}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  style={{
-                    position: 'absolute',
-                    right: '16px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#94A3B8',
-                    padding: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
+                <button type="button" onClick={() => setShowPassword(s => !s)} style={{
+                  position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 0, display: 'flex', alignItems: 'center',
+                }}>
                   {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%', height: '58px', borderRadius: '999px', border: 'none',
-                background: loading ? '#94A3B8' : 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
-                color: '#FFFFFF', fontSize: '17px', fontWeight: 700,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 10px 25px rgba(15,76,255,0.25)',
-                transition: 'all 0.2s ease', marginTop: '4px',
-              }}
-            >
+            <button type="submit" disabled={loading} style={{
+              width: '100%', height: '58px', borderRadius: '999px', border: 'none',
+              background: loading ? '#94A3B8' : 'linear-gradient(90deg, #0F4CFF 0%, #10B981 100%)',
+              color: '#FFFFFF', fontSize: '17px', fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 10px 25px rgba(15,76,255,0.25)', transition: 'all 0.2s ease', marginTop: '4px',
+            }}>
               {loading ? 'Criando conta...' : 'Criar conta'}
             </button>
           </form>
